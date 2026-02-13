@@ -12,15 +12,12 @@ import {
 } from './constants';
 import { vecDist, clamp } from '@/lib/utils';
 
-// Polyfill for roundRect on older browsers
+// Cross-browser roundRect using arcTo (avoids TS error with native check)
 function roundRect(
   ctx: CanvasRenderingContext2D,
   x: number, y: number, w: number, h: number, r: number
 ): void {
-  if (ctx.roundRect) {
-    roundRect(ctx,x, y, w, h, r);
-    return;
-  }
+  ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.lineTo(x + w - r, y);
   ctx.arcTo(x + w, y, x + w, y + r, r);
