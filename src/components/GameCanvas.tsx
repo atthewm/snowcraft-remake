@@ -80,6 +80,35 @@ export default function GameCanvas({ engineRef, onPhaseChange, embedded }: GameC
     e.preventDefault();
   }, []);
 
+  const getTouchCoords = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0] || e.changedTouches[0];
+    return {
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top,
+    };
+  }, []);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const { x, y } = getTouchCoords(e);
+    engineRef.current?.handleMouseDown(x, y, 0);
+  }, [engineRef, getTouchCoords]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const { x, y } = getTouchCoords(e);
+    engineRef.current?.handleMouseUp(x, y, 0);
+  }, [engineRef, getTouchCoords]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const { x, y } = getTouchCoords(e);
+    engineRef.current?.handleMouseMove(x, y);
+  }, [engineRef, getTouchCoords]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // In embedded mode, don't steal global shortcuts
@@ -104,10 +133,15 @@ export default function GameCanvas({ engineRef, onPhaseChange, embedded }: GameC
       <canvas
         ref={canvasRef}
         className="block w-full h-full cursor-crosshair"
+        role="img"
+        aria-label="SnowCraft game canvas: 3v3 snowball fight"
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onMouseMove={handleMouseMove}
         onContextMenu={handleContextMenu}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchMove={handleTouchMove}
       />
     </div>
   );

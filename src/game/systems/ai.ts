@@ -17,6 +17,8 @@ import {
 } from '@/lib/utils';
 import { moveUnitTo } from './movement';
 import { startCharge, releaseThrow } from './combat';
+import { getLevel } from '../levels/levelData';
+import { DIFFICULTY_SETTINGS } from '../constants';
 
 interface AIState {
   thinkTimer: number;
@@ -49,7 +51,12 @@ export function updateAI(state: GameState, dt: number): void {
 
   if (players.length === 0) return;
 
-  const levelData = getLevelParams(state.level);
+  const levelConfig = getLevel(state.level);
+  const diff = DIFFICULTY_SETTINGS[state.difficulty];
+  const levelData = {
+    aggression: clamp(levelConfig.enemyAggression * diff.enemyAggressionMult, 0, 1),
+    accuracy: clamp(levelConfig.enemyAccuracy * diff.enemyAccuracyMult, 0, 1),
+  };
 
   for (const enemy of enemies) {
     const ai = getAI(enemy);
@@ -139,10 +146,3 @@ export function updateAI(state: GameState, dt: number): void {
   }
 }
 
-function getLevelParams(level: number): { aggression: number; accuracy: number } {
-  const t = clamp((level - 1) / 9, 0, 1); // 0 at level 1, 1 at level 10
-  return {
-    aggression: 0.4 + t * 0.5,
-    accuracy: 0.3 + t * 0.6,
-  };
-}

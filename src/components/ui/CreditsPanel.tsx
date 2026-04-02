@@ -9,10 +9,7 @@ interface CreditsPanelProps {
 export default function CreditsPanel({ onBack }: CreditsPanelProps) {
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-sky-200 to-white z-20">
-      <div
-        className="bg-white rounded-xl p-8 max-w-lg w-full mx-4 shadow-xl"
-        style={{ fontFamily: 'VT323, monospace' }}
-      >
+      <div className="bg-white rounded-xl p-8 max-w-lg w-full mx-4 shadow-xl font-game">
         <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">ABOUT / CREDITS</h2>
 
         <div className="space-y-5 text-lg text-gray-700">
@@ -46,7 +43,7 @@ export default function CreditsPanel({ onBack }: CreditsPanelProps) {
             <p className="text-xl font-bold text-gray-800 mb-2">Remake Credits</p>
             <p>Fan remake built as a modern web app.</p>
             <p className="mt-1">Engine: HTML5 Canvas + Next.js</p>
-            <p>All sprites, sounds, and code: original clean-room work.</p>
+            <p>All sprites, sounds, and code: original clean room work.</p>
           </div>
         </div>
 

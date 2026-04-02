@@ -43,6 +43,37 @@ export const AI_SCATTER_DISTANCE = 60;
 // ---- Camera ----
 export const SHAKE_DECAY = 8;             // how fast shake fades
 
+// ---- Difficulty multipliers ----
+export const DIFFICULTY_SETTINGS = {
+  easy: {
+    enemyHpMult: 0.8,
+    enemyDamageMult: 0.7,
+    enemySpeedMult: 0.85,
+    enemyAggressionMult: 0.7,
+    enemyAccuracyMult: 0.6,
+    playerHealPercent: 0.5,
+    label: 'Easy',
+  },
+  normal: {
+    enemyHpMult: 1.0,
+    enemyDamageMult: 1.0,
+    enemySpeedMult: 1.0,
+    enemyAggressionMult: 1.0,
+    enemyAccuracyMult: 1.0,
+    playerHealPercent: 0.3,
+    label: 'Normal',
+  },
+  hard: {
+    enemyHpMult: 1.2,
+    enemyDamageMult: 1.3,
+    enemySpeedMult: 1.15,
+    enemyAggressionMult: 1.2,
+    enemyAccuracyMult: 1.3,
+    playerHealPercent: 0.15,
+    label: 'Hard',
+  },
+} as const;
+
 // ---- Colors ----
 export const TEAM_COLORS = {
   red: {

@@ -14,10 +14,7 @@ interface GameOverScreenProps {
 export default function GameOverScreen({ type, level, score, onNextLevel, onRestart, onQuit }: GameOverScreenProps) {
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
-      <div
-        className="bg-white rounded-xl p-8 min-w-[320px] shadow-xl text-center"
-        style={{ fontFamily: 'VT323, monospace' }}
-      >
+      <div className="bg-white rounded-xl p-8 min-w-[320px] shadow-xl text-center font-game">
         {type === 'level_complete' && (
           <>
             <h2 className="text-4xl font-bold text-green-600 mb-2">LEVEL CLEAR!</h2>

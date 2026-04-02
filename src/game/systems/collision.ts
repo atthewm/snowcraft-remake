@@ -57,8 +57,9 @@ export function resolveCollisions(state: GameState, result: CollisionResult): vo
       unit.hp = 0;
       unit.isKnockedOut = true;
       unit.knockoutTimer = 0;
-      // Big puff on knockout
-      spawnHitParticles(state, unit.pos, PUFF_COUNT_ON_HIT * 2);
+      // Death burst: large puff + colored particles
+      spawnHitParticles(state, unit.pos, PUFF_COUNT_ON_HIT * 3);
+      spawnDeathParticles(state, unit);
     }
   }
 
@@ -87,6 +88,25 @@ export function removeOutOfBounds(state: GameState): void {
     sb.pos.y > -margin &&
     sb.pos.y < state.arenaHeight + margin
   );
+}
+
+function spawnDeathParticles(state: GameState, unit: Unit): void {
+  const teamColor = unit.team === 'red' ? '#e74c3c' : '#2ecc71';
+  const colors = [teamColor, '#ffffff', '#c8d6e5', teamColor];
+  for (let i = 0; i < 12; i++) {
+    const angle = randomRange(0, Math.PI * 2);
+    const speed = randomRange(50, 160);
+    state.particles.push({
+      pos: { x: unit.pos.x, y: unit.pos.y },
+      vel: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed - 40 },
+      life: randomRange(0.4, 0.8),
+      maxLife: 0.8,
+      size: randomRange(3, 8),
+      color: colors[i % colors.length],
+      alpha: 1,
+      type: 'snow_puff',
+    });
+  }
 }
 
 function spawnHitParticles(state: GameState, pos: { x: number; y: number }, count: number): void {

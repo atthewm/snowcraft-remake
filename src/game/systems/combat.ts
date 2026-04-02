@@ -65,5 +65,8 @@ export function updateCooldowns(units: Unit[], dt: number): void {
     if (unit.hitFlashTimer > 0) {
       unit.hitFlashTimer -= dt;
     }
+    if (unit.isKnockedOut) {
+      unit.knockoutTimer += dt;
+    }
   }
 }

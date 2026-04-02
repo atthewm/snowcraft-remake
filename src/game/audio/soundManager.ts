@@ -4,12 +4,13 @@
 let audioCtx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
 let muted = false;
+let volume = 0.3;
 
 function getCtx(): AudioContext {
   if (!audioCtx) {
     audioCtx = new AudioContext();
     masterGain = audioCtx.createGain();
-    masterGain.gain.value = 0.3;
+    masterGain.gain.value = volume;
     masterGain.connect(audioCtx.destination);
   }
   if (audioCtx.state === 'suspended') {
@@ -25,10 +26,24 @@ function getOutput(): GainNode {
 
 export function setMuted(m: boolean): void {
   muted = m;
+  if (masterGain) {
+    masterGain.gain.value = m ? 0 : volume;
+  }
 }
 
 export function isMuted(): boolean {
   return muted;
+}
+
+export function setVolume(v: number): void {
+  volume = Math.max(0, Math.min(1, v));
+  if (masterGain && !muted) {
+    masterGain.gain.value = volume;
+  }
+}
+
+export function getVolume(): number {
+  return volume;
 }
 
 export function playThrow(charge: number): void {
@@ -117,25 +132,6 @@ export function playSelect(): void {
   gain.connect(getOutput());
   osc.start(ctx.currentTime);
   osc.stop(ctx.currentTime + 0.1);
-}
-
-export function playCharge(): void {
-  if (muted) return;
-  const ctx = getCtx();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(150, ctx.currentTime);
-  osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 1.0);
-
-  gain.gain.setValueAtTime(0.06, ctx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 1.0);
-
-  osc.connect(gain);
-  gain.connect(getOutput());
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 1.0);
 }
 
 export function playLevelComplete(): void {

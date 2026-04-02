@@ -89,13 +89,17 @@ export interface LevelData {
   enemySpeed: number;       // multiplier
 }
 
+// ---- Difficulty ----
+export type Difficulty = 'easy' | 'normal' | 'hard';
+
 // ---- Game state ----
-export type GamePhase = 'title' | 'how_to_play' | 'credits' | 'playing' | 'paused' | 'level_complete' | 'game_over' | 'victory';
+export type GamePhase = 'title' | 'how_to_play' | 'credits' | 'level_select' | 'leaderboard' | 'playing' | 'paused' | 'level_complete' | 'game_over' | 'victory';
 
 export interface GameState {
   phase: GamePhase;
   level: number;
   score: number;
+  difficulty: Difficulty;
   units: Unit[];
   snowballs: Snowball[];
   obstacles: Obstacle[];
@@ -106,6 +110,15 @@ export interface GameState {
   arenaWidth: number;
   arenaHeight: number;
   levelTransitionTimer: number;
+  inputMode: 'throw' | 'move';
+}
+
+// ---- High scores ----
+export interface HighScore {
+  score: number;
+  level: number;
+  difficulty: Difficulty;
+  date: string;
 }
 
 export interface Camera {

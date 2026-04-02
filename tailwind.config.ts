@@ -9,8 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        pixel: ['"Press Start 2P"', 'monospace'],
-        game: ['VT323', 'monospace'],
+        pixel: ['var(--font-press-start)', '"Press Start 2P"', 'monospace'],
+        game: ['var(--font-vt323)', 'VT323', 'monospace'],
       },
       colors: {
         snow: {

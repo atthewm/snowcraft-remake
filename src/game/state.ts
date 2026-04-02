@@ -1,5 +1,5 @@
-import { GameState, GamePhase, Unit, Vec2 } from './types';
-import { BASE_ARENA_W, BASE_ARENA_H, UNIT_MAX_HP, SHAKE_DECAY } from './constants';
+import { GameState, Difficulty, Unit, Vec2 } from './types';
+import { BASE_ARENA_W, BASE_ARENA_H, UNIT_MAX_HP, SHAKE_DECAY, DIFFICULTY_SETTINGS } from './constants';
 import { createUnit } from './entities/unit';
 import { createObstacle } from './entities/obstacle';
 import { getLevel } from './levels/levelData';
@@ -11,6 +11,7 @@ export function createInitialState(): GameState {
     phase: 'title',
     level: 1,
     score: 0,
+    difficulty: 'normal',
     units: [],
     snowballs: [],
     obstacles: [],
@@ -21,6 +22,7 @@ export function createInitialState(): GameState {
     arenaWidth: BASE_ARENA_W,
     arenaHeight: BASE_ARENA_H,
     levelTransitionTimer: 0,
+    inputMode: 'throw',
   };
 }
 
@@ -29,6 +31,7 @@ export function setupLevel(state: GameState): void {
   resetAIStates();
 
   const levelData = getLevel(state.level);
+  const diff = DIFFICULTY_SETTINGS[state.difficulty];
   state.arenaWidth = levelData.arenaWidth;
   state.arenaHeight = levelData.arenaHeight;
   state.snowballs = [];
@@ -51,7 +54,7 @@ export function setupLevel(state: GameState): void {
   const enemySpacingY = levelData.arenaHeight / (levelData.enemyCount + 1);
   for (let i = 0; i < levelData.enemyCount; i++) {
     const unit = createUnit('green', { x: enemyStartX, y: enemySpacingY * (i + 1) }, i);
-    unit.speed *= levelData.enemySpeed;
+    unit.speed *= levelData.enemySpeed * diff.enemySpeedMult;
     state.units.push(unit);
   }
 
@@ -64,6 +67,16 @@ export function setupLevel(state: GameState): void {
   const firstPlayer = state.units.find(u => u.team === 'red');
   if (firstPlayer) {
     state.selectedUnitId = firstPlayer.id;
+  }
+}
+
+export function healPlayerUnits(state: GameState): void {
+  const diff = DIFFICULTY_SETTINGS[state.difficulty];
+  for (const unit of state.units) {
+    if (unit.team === 'red' && !unit.isKnockedOut) {
+      const healAmount = unit.maxHp * diff.playerHealPercent;
+      unit.hp = Math.min(unit.maxHp, unit.hp + healAmount);
+    }
   }
 }
 

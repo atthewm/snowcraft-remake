@@ -16,11 +16,8 @@ export default function HUD({ state }: HUDProps) {
   const levelName = levels[Math.min(state.level - 1, levels.length - 1)]?.name ?? '';
 
   return (
-    <div className="absolute top-0 left-0 right-0 z-10 pointer-events-none">
-      <div
-        className="flex justify-between items-start p-3 text-sm"
-        style={{ fontFamily: 'VT323, monospace' }}
-      >
+    <div className="absolute top-0 left-0 right-0 z-10 pointer-events-none font-game">
+      <div className="flex justify-between items-start p-3 text-sm">
         {/* Level info */}
         <div className="bg-black/50 text-white px-3 py-2 rounded-lg">
           <div className="text-lg font-bold">Level {state.level}</div>
@@ -49,10 +46,7 @@ export default function HUD({ state }: HUDProps) {
         const selected = state.units.find(u => u.id === state.selectedUnitId);
         if (!selected || selected.isKnockedOut) return null;
         return (
-          <div
-            className="absolute bottom-3 left-3 bg-black/50 text-white px-3 py-2 rounded-lg"
-            style={{ fontFamily: 'VT323, monospace' }}
-          >
+          <div className="absolute bottom-3 left-3 bg-black/50 text-white px-3 py-2 rounded-lg">
             <div className="text-xs text-gray-300">Selected Unit</div>
             <div className="flex items-center gap-2 mt-1">
               <span>HP:</span>
@@ -75,10 +69,7 @@ export default function HUD({ state }: HUDProps) {
       })()}
 
       {/* Controls hint */}
-      <div
-        className="absolute bottom-3 right-3 bg-black/30 text-white/70 px-3 py-2 rounded-lg text-xs"
-        style={{ fontFamily: 'VT323, monospace' }}
-      >
+      <div className="absolute bottom-3 right-3 bg-black/30 text-white/70 px-3 py-2 rounded-lg text-xs">
         <div>LMB: Select / Charge throw</div>
         <div>RMB: Move</div>
         <div>Tab: Next unit | Esc: Pause</div>

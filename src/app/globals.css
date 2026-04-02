@@ -23,13 +23,54 @@ canvas {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  touch-action: none;
 }
 
-/* Button hover sound effect via animation trick */
+/* Button hover glow */
 button:hover {
   filter: brightness(1.1);
 }
 
-button:active {
-  transform: translateY(2px);
+/* Button press effect handled by Tailwind active:scale-95 utility */
+
+/* Falling snowflake animation */
+@keyframes snowflake-fall {
+  0% {
+    transform: translateY(-20px) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(100vh) translateX(30px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.snowflake-fall {
+  animation: snowflake-fall linear infinite;
+  top: -20px;
+}
+
+/* Volume slider styling */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #9b59b6;
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #9b59b6;
+  cursor: pointer;
+  border: none;
 }

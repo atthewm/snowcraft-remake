@@ -9,10 +9,7 @@ interface HowToPlayProps {
 export default function HowToPlay({ onBack }: HowToPlayProps) {
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-sky-200 to-white z-20">
-      <div
-        className="bg-white rounded-xl p-8 max-w-lg w-full mx-4 shadow-xl"
-        style={{ fontFamily: 'VT323, monospace' }}
-      >
+      <div className="bg-white rounded-xl p-8 max-w-lg w-full mx-4 shadow-xl font-game">
         <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">HOW TO PLAY</h2>
 
         <div className="space-y-4 text-lg text-gray-700">
@@ -20,7 +17,7 @@ export default function HowToPlay({ onBack }: HowToPlayProps) {
             <span className="text-2xl">🎯</span>
             <div>
               <strong className="text-gray-900">Select a unit:</strong>
-              <br />Left-click on one of your red team characters to select them.
+              <br />Left click on one of your red team characters to select them.
               Use Tab to cycle through your units.
             </div>
           </div>
@@ -29,7 +26,7 @@ export default function HowToPlay({ onBack }: HowToPlayProps) {
             <span className="text-2xl">🏃</span>
             <div>
               <strong className="text-gray-900">Move:</strong>
-              <br />Right-click anywhere within the movement range (dashed circle)
+              <br />Right click anywhere within the movement range (dashed circle)
               to move your selected unit there.
             </div>
           </div>
@@ -38,7 +35,7 @@ export default function HowToPlay({ onBack }: HowToPlayProps) {
             <span className="text-2xl">❄️</span>
             <div>
               <strong className="text-gray-900">Throw snowballs:</strong>
-              <br />Left-click and hold to charge up your throw power.
+              <br />Left click and hold to charge up your throw power.
               Release to throw! Longer charge means more speed and damage.
             </div>
           </div>

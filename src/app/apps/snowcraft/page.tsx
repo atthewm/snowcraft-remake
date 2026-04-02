@@ -19,7 +19,7 @@ function SnowcraftPage() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="w-screen h-screen bg-sky-100 flex items-center justify-center text-gray-500" style={{ fontFamily: 'VT323, monospace' }}>Loading SnowCraft...</div>}>
+    <Suspense fallback={<div className="w-screen h-screen bg-sky-100 flex items-center justify-center text-gray-500 font-game">Loading SnowCraft...</div>}>
       <SnowcraftPage />
     </Suspense>
   );

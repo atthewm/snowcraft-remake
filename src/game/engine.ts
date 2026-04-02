@@ -1,8 +1,9 @@
-import { GameState, InputState, Vec2 } from './types';
+import { GameState, InputState, Vec2, Difficulty } from './types';
 import { FIXED_DT, MAX_DT, MOVEMENT_RANGE, UNIT_RADIUS } from './constants';
 import {
   createInitialState,
   setupLevel,
+  healPlayerUnits,
   updateScreenShake,
   checkWinCondition,
   getSelectedUnit,
@@ -23,8 +24,9 @@ import {
   playGameOver,
   playClick,
 } from './audio/soundManager';
-import { vecDist, pointInCircle } from '@/lib/utils';
+import { vecDist, pointInCircle, lerp } from '@/lib/utils';
 import { levels } from './levels/levelData';
+import { trackEvent } from '@/lib/analytics';
 
 export class GameEngine {
   state: GameState;
@@ -38,6 +40,9 @@ export class GameEngine {
   private running: boolean = false;
   private chargeParticleTimer: number = 0;
   private onPhaseChange?: (phase: string) => void;
+  private groundCanvas: OffscreenCanvas | HTMLCanvasElement | null = null;
+  private groundArenaW: number = 0;
+  private groundArenaH: number = 0;
 
   constructor(canvas: HTMLCanvasElement, onPhaseChange?: (phase: string) => void) {
     this.canvas = canvas;
@@ -76,38 +81,83 @@ export class GameEngine {
     this.onPhaseChange?.(phase);
   }
 
-  startGame(): void {
+  startGame(difficulty?: Difficulty): void {
     this.state = createInitialState();
     this.state.phase = 'playing';
     this.state.level = 1;
     this.state.score = 0;
+    this.state.difficulty = difficulty ?? 'normal';
+    this.groundCanvas = null; // Reset cached ground
     setupLevel(this.state);
     this.onPhaseChange?.('playing');
+    trackEvent('level_start', { level: 1, difficulty: this.state.difficulty });
+  }
+
+  startFromLevel(level: number, difficulty: Difficulty): void {
+    this.state = createInitialState();
+    this.state.phase = 'playing';
+    this.state.level = level;
+    this.state.score = 0;
+    this.state.difficulty = difficulty;
+    this.groundCanvas = null;
+    setupLevel(this.state);
+    this.onPhaseChange?.('playing');
+    trackEvent('level_start', { level, difficulty });
   }
 
   nextLevel(): void {
+    // Heal surviving player units
+    healPlayerUnits(this.state);
+
     this.state.level++;
     if (this.state.level > levels.length) {
       this.state.phase = 'victory';
       this.onPhaseChange?.('victory');
+      trackEvent('victory', { score: this.state.score, difficulty: this.state.difficulty });
     } else {
+      this.groundCanvas = null; // Reset cached ground for new arena size
       setupLevel(this.state);
       this.state.phase = 'playing';
       this.onPhaseChange?.('playing');
+      trackEvent('level_start', { level: this.state.level, difficulty: this.state.difficulty });
     }
   }
 
   restartLevel(): void {
+    this.groundCanvas = null;
     setupLevel(this.state);
     this.state.phase = 'playing';
     this.onPhaseChange?.('playing');
+    trackEvent('level_start', { level: this.state.level, difficulty: this.state.difficulty });
+  }
+
+  getGroundCanvas(): OffscreenCanvas | HTMLCanvasElement | null {
+    return this.groundCanvas;
+  }
+
+  setGroundCanvas(canvas: OffscreenCanvas | HTMLCanvasElement): void {
+    this.groundCanvas = canvas;
+    this.groundArenaW = this.state.arenaWidth;
+    this.groundArenaH = this.state.arenaHeight;
+  }
+
+  isGroundCacheDirty(): boolean {
+    return !this.groundCanvas ||
+      this.groundArenaW !== this.state.arenaWidth ||
+      this.groundArenaH !== this.state.arenaHeight;
   }
 
   // Input handlers
   handleMouseDown(x: number, y: number, button: number): void {
     if (button === 0) {
-      this.input.mouseDown = true;
-      this.input.mouseJustPressed = true;
+      // On mobile (inputMode), remap touch based on mode
+      if (this.state.inputMode === 'move') {
+        this.input.rightMouseDown = true;
+        this.input.rightMouseJustPressed = true;
+      } else {
+        this.input.mouseDown = true;
+        this.input.mouseJustPressed = true;
+      }
     } else if (button === 2) {
       this.input.rightMouseDown = true;
       this.input.rightMouseJustPressed = true;
@@ -118,8 +168,12 @@ export class GameEngine {
 
   handleMouseUp(x: number, y: number, button: number): void {
     if (button === 0) {
-      this.input.mouseDown = false;
-      this.input.mouseJustReleased = true;
+      if (this.state.inputMode === 'move') {
+        this.input.rightMouseDown = false;
+      } else {
+        this.input.mouseDown = false;
+        this.input.mouseJustReleased = true;
+      }
     } else if (button === 2) {
       this.input.rightMouseDown = false;
     }
@@ -139,6 +193,14 @@ export class GameEngine {
 
   handleKeyUp(key: string): void {
     this.input.keys.delete(key);
+    // Space bar release triggers throw release
+    if (key === ' ' && this.state.phase === 'playing') {
+      const selected = getSelectedUnit(this.state);
+      if (selected && selected.isCharging && this.mouseWorldPos) {
+        releaseThrow(selected, this.mouseWorldPos, this.state);
+        playThrow(selected.throwCharge);
+      }
+    }
   }
 
   private loop = (now: number): void => {
@@ -168,7 +230,7 @@ export class GameEngine {
     }
 
     // Render
-    render(this.ctx, this.state, this.canvas.width, this.canvas.height, this.mouseWorldPos);
+    render(this.ctx, this.state, this.canvas.width, this.canvas.height, this.mouseWorldPos, this);
 
     // Clear one-frame input flags
     this.input.mouseJustPressed = false;
@@ -245,10 +307,12 @@ export class GameEngine {
       this.state.phase = 'level_complete';
       this.state.levelTransitionTimer = 2;
       this.onPhaseChange?.('level_complete');
+      trackEvent('level_complete', { level: this.state.level, score: this.state.score });
     } else if (result === 'game_over') {
       playGameOver();
       this.state.phase = 'game_over';
       this.onPhaseChange?.('game_over');
+      trackEvent('game_over', { level: this.state.level, score: this.state.score });
     }
 
     // Level transition timer
@@ -273,6 +337,13 @@ export class GameEngine {
       this.state.phase = 'paused';
       this.onPhaseChange?.('paused');
       return;
+    }
+
+    // Space bar to start charging
+    if (this.input.keysJustPressed.has(' ')) {
+      if (selected && !selected.isKnockedOut && selected.cooldown <= 0 && !selected.isCharging) {
+        startCharge(selected);
+      }
     }
 
     // Left click
@@ -327,12 +398,34 @@ export class GameEngine {
   }
 
   private updateCamera(): void {
-    // Auto-fit arena in view
     const scaleX = this.canvas.width / this.state.arenaWidth;
     const scaleY = this.canvas.height / this.state.arenaHeight;
-    this.state.camera.scale = Math.min(scaleX, scaleY) * 0.95;
-    this.state.camera.x = 0;
-    this.state.camera.y = 0;
+    const fitScale = Math.min(scaleX, scaleY) * 0.95;
+
+    // If arena fits in view, center it
+    if (fitScale >= 0.8) {
+      this.state.camera.scale = fitScale;
+      this.state.camera.x = 0;
+      this.state.camera.y = 0;
+    } else {
+      // Camera follows selected unit on large maps
+      this.state.camera.scale = 0.8;
+      const selected = getSelectedUnit(this.state);
+      if (selected && !selected.isKnockedOut) {
+        const viewW = this.canvas.width / this.state.camera.scale;
+        const viewH = this.canvas.height / this.state.camera.scale;
+        const targetX = selected.pos.x - viewW / 2;
+        const targetY = selected.pos.y - viewH / 2;
+        // Clamp camera to arena bounds
+        const maxX = this.state.arenaWidth - viewW;
+        const maxY = this.state.arenaHeight - viewH;
+        const clampedX = Math.max(0, Math.min(maxX, targetX));
+        const clampedY = Math.max(0, Math.min(maxY, targetY));
+        // Smooth lerp
+        this.state.camera.x = lerp(this.state.camera.x, clampedX, 0.08);
+        this.state.camera.y = lerp(this.state.camera.y, clampedY, 0.08);
+      }
+    }
   }
 
   resize(width: number, height: number): void {

@@ -1,4 +1,4 @@
-import { GameState, Unit, Snowball, Obstacle, Particle, RenderContext, Vec2 } from './types';
+import { GameState, Unit, Snowball, Obstacle, Particle, Vec2 } from './types';
 import {
   TEAM_COLORS,
   GROUND_COLOR,
@@ -8,13 +8,13 @@ import {
   TILE_SIZE,
   UNIT_RADIUS,
   MOVEMENT_RANGE,
-  CHARGE_TIME,
 } from './constants';
-import { vecDist, clamp } from '@/lib/utils';
+import { vecDist } from '@/lib/utils';
+import type { GameEngine } from './engine';
 
 // Cross-browser roundRect using arcTo (avoids TS error with native check)
 function roundRect(
-  ctx: CanvasRenderingContext2D,
+  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   x: number, y: number, w: number, h: number, r: number
 ): void {
   ctx.beginPath();
@@ -35,7 +35,8 @@ export function render(
   state: GameState,
   canvasWidth: number,
   canvasHeight: number,
-  mouseWorldPos: Vec2 | null
+  mouseWorldPos: Vec2 | null,
+  engine?: GameEngine
 ): void {
   const cam = state.camera;
 
@@ -54,8 +55,19 @@ export function render(
   ctx.scale(cam.scale, cam.scale);
   ctx.translate(-cam.x, -cam.y);
 
-  // Draw ground
-  drawGround(ctx, state.arenaWidth, state.arenaHeight);
+  // Draw ground (cached offscreen)
+  if (engine) {
+    if (engine.isGroundCacheDirty()) {
+      const groundCanvas = createGroundCanvas(state.arenaWidth, state.arenaHeight);
+      engine.setGroundCanvas(groundCanvas);
+    }
+    const gc = engine.getGroundCanvas();
+    if (gc) {
+      ctx.drawImage(gc as any, 0, 0);
+    }
+  } else {
+    drawGround(ctx, state.arenaWidth, state.arenaHeight);
+  }
 
   // Draw movement range for selected unit
   const selectedUnit = state.units.find(u => u.id === state.selectedUnitId);
@@ -110,9 +122,28 @@ export function render(
   }
 
   ctx.restore();
+
+  // Draw minimap for large arenas
+  if (cam.scale < 0.8) {
+    drawMinimap(ctx, state, canvasWidth, canvasHeight);
+  }
 }
 
-function drawGround(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+function createGroundCanvas(w: number, h: number): OffscreenCanvas | HTMLCanvasElement {
+  let canvas: OffscreenCanvas | HTMLCanvasElement;
+  if (typeof OffscreenCanvas !== 'undefined') {
+    canvas = new OffscreenCanvas(w, h);
+  } else {
+    canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+  }
+  const ctx = canvas.getContext('2d')! as CanvasRenderingContext2D;
+  drawGround(ctx, w, h);
+  return canvas;
+}
+
+function drawGround(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, w: number, h: number): void {
   // Base ground
   ctx.fillStyle = GROUND_COLOR;
   ctx.fillRect(0, 0, w, h);
@@ -166,14 +197,18 @@ function drawMovementRange(ctx: CanvasRenderingContext2D, unit: Unit): void {
 }
 
 function drawUnit(ctx: CanvasRenderingContext2D, unit: Unit, isSelected: boolean): void {
-  const { pos, radius, team, hp, maxHp, isKnockedOut, hitFlashTimer, isCharging, throwCharge } = unit;
+  const { pos, radius, team, hp, maxHp, isKnockedOut, hitFlashTimer, isCharging, throwCharge, knockoutTimer } = unit;
   const colors = TEAM_COLORS[team];
 
   ctx.save();
   ctx.translate(pos.x, pos.y);
 
   if (isKnockedOut) {
-    ctx.globalAlpha = 0.4;
+    // Death fade animation
+    const fadeTime = Math.min(knockoutTimer, 1);
+    ctx.globalAlpha = Math.max(0.15, 0.4 - fadeTime * 0.25);
+    const scale = 1 - fadeTime * 0.15;
+    ctx.scale(scale, scale);
   }
 
   // Shadow
@@ -341,13 +376,16 @@ function drawObstacle(ctx: CanvasRenderingContext2D, obs: Obstacle): void {
       // Snow wall
       const halfW = obs.width / 2;
       const halfH = obs.height / 2;
+      const hpRatio = obs.hp / obs.maxHp;
 
       // Shadow
       ctx.fillStyle = 'rgba(0,0,0,0.1)';
       ctx.fillRect(-halfW + 2, -halfH + 2, obs.width, obs.height);
 
-      // Main body
-      ctx.fillStyle = SNOW_WHITE;
+      // Main body (color shifts as damaged)
+      const bodyColor = hpRatio > 0.66 ? SNOW_WHITE :
+                        hpRatio > 0.33 ? '#e0e4e8' : '#d0d4d8';
+      ctx.fillStyle = bodyColor;
       ctx.strokeStyle = SNOW_SHADOW;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
@@ -361,6 +399,36 @@ function drawObstacle(ctx: CanvasRenderingContext2D, obs: Obstacle): void {
       roundRect(ctx,-halfW + 2, -halfH - 3, obs.width - 4, 8, 3);
       ctx.fill();
 
+      // Damage cracks
+      if (hpRatio < 0.66) {
+        ctx.strokeStyle = 'rgba(100, 120, 140, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-halfW * 0.3, -halfH * 0.5);
+        ctx.lineTo(halfW * 0.1, halfH * 0.3);
+        ctx.lineTo(halfW * 0.4, -halfH * 0.2);
+        ctx.stroke();
+      }
+      if (hpRatio < 0.33) {
+        ctx.strokeStyle = 'rgba(100, 120, 140, 0.6)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(halfW * 0.2, -halfH * 0.6);
+        ctx.lineTo(-halfW * 0.2, halfH * 0.1);
+        ctx.lineTo(-halfW * 0.5, halfH * 0.5);
+        ctx.stroke();
+        // Rubble chunks at base
+        ctx.fillStyle = SNOW_SHADOW;
+        ctx.globalAlpha = 0.3;
+        ctx.beginPath();
+        ctx.arc(-halfW * 0.4, halfH + 3, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(halfW * 0.3, halfH + 2, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
       // HP bar
       if (obs.hp < obs.maxHp) {
         const barW = obs.width;
@@ -368,7 +436,7 @@ function drawObstacle(ctx: CanvasRenderingContext2D, obs: Obstacle): void {
         ctx.fillStyle = '#e74c3c';
         ctx.fillRect(-barW / 2, barY, barW, 3);
         ctx.fillStyle = '#95a5a6';
-        ctx.fillRect(-barW / 2, barY, barW * (obs.hp / obs.maxHp), 3);
+        ctx.fillRect(-barW / 2, barY, barW * hpRatio, 3);
       }
     }
   } else if (obs.type === 'snowman') {
@@ -480,6 +548,68 @@ function drawAimLine(ctx: CanvasRenderingContext2D, unit: Unit, target: Vec2): v
   ctx.beginPath();
   ctx.arc(target.x, target.y, 8, 0, Math.PI * 2);
   ctx.stroke();
+  ctx.restore();
+}
+
+function drawMinimap(ctx: CanvasRenderingContext2D, state: GameState, canvasW: number, canvasH: number): void {
+  const mapW = 140;
+  const mapH = Math.round(mapW * (state.arenaHeight / state.arenaWidth));
+  const mapX = canvasW - mapW - 12;
+  const mapY = canvasH - mapH - 12;
+  const scaleX = mapW / state.arenaWidth;
+  const scaleY = mapH / state.arenaHeight;
+
+  ctx.save();
+
+  // Background
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+  ctx.fillRect(mapX - 2, mapY - 2, mapW + 4, mapH + 4);
+  ctx.fillStyle = 'rgba(232, 238, 244, 0.8)';
+  ctx.fillRect(mapX, mapY, mapW, mapH);
+
+  // Obstacles
+  for (const obs of state.obstacles) {
+    if (obs.hp <= 0 && obs.type !== 'tree' && obs.type !== 'rock') continue;
+    const ox = mapX + obs.pos.x * scaleX;
+    const oy = mapY + obs.pos.y * scaleY;
+    const ow = Math.max(2, obs.width * scaleX);
+    const oh = Math.max(2, obs.height * scaleY);
+    ctx.fillStyle = obs.type === 'tree' ? '#2e7d32' :
+                    obs.type === 'rock' ? '#78909c' :
+                    obs.type === 'snowman' ? '#ecf0f1' : '#bdc3c7';
+    ctx.fillRect(ox - ow / 2, oy - oh / 2, ow, oh);
+  }
+
+  // Units
+  for (const unit of state.units) {
+    if (unit.isKnockedOut) continue;
+    const ux = mapX + unit.pos.x * scaleX;
+    const uy = mapY + unit.pos.y * scaleY;
+    ctx.fillStyle = unit.team === 'red' ? '#e74c3c' : '#2ecc71';
+    ctx.beginPath();
+    ctx.arc(ux, uy, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Selected unit highlight
+    if (unit.id === state.selectedUnitId) {
+      ctx.strokeStyle = '#ffeb3b';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(ux, uy, 5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  // Camera viewport box
+  const cam = state.camera;
+  const vpW = (canvasW / cam.scale) * scaleX;
+  const vpH = (canvasH / cam.scale) * scaleY;
+  const vpX = mapX + cam.x * scaleX;
+  const vpY = mapY + cam.y * scaleY;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(vpX, vpY, vpW, vpH);
+
   ctx.restore();
 }
 
