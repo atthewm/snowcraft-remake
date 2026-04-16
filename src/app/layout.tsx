@@ -9,7 +9,7 @@ const pressStart = Press_Start_2P({ weight: '400', subsets: ['latin'], variable:
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://snowcraft.vercel.app'),
-  title: 'SnowCraft | Free Browser Snowball Fight Game',
+  title: 'SnowCraft (Fan Remake) | Free Browser Snowball Fight Game',
   description: 'Play SnowCraft, a free 3v3 snowball fight game in your browser. A clean room fan remake of the 2001 classic by Nicholson NY. 10 levels, no download required.',
   manifest: '/manifest.json',
   icons: {
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   },
   keywords: ['snowcraft', 'snowball fight', 'browser game', 'free game', 'fan remake', 'strategy game', 'HTML5 game'],
   openGraph: {
-    title: 'SnowCraft | Free Browser Snowball Fight Game',
+    title: 'SnowCraft (Fan Remake) | Free Browser Snowball Fight Game',
     description: 'Play SnowCraft, a free 3v3 snowball fight game in your browser. 10 levels of tactical snowball combat, no download required.',
     url: 'https://snowcraft.vercel.app',
     type: 'website',
@@ -30,8 +30,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SnowCraft | Free Browser Snowball Fight Game',
-    description: 'Play SnowCraft, a free 3v3 snowball fight game in your browser. 10 levels of tactical snowball combat.',
+    title: 'SnowCraft (Fan Remake) | Free Browser Snowball Fight Game',
+    description: 'Play SnowCraft, a free 3v3 snowball fight game in your browser. 10 levels of tactical snowball combat, no download required.',
   },
   robots: {
     index: true,

@@ -1,0 +1,45 @@
+# SnowCraft (Fan Remake)
+
+> A free browser based 3v3 snowball fight game. Clean room fan remake of the 2001 Nicholson NY original. No download, no ads, no account.
+
+## Description
+
+SnowCraft is a tactical snowball combat mini game played in the browser. The original SnowCraft was released by Nicholson NY in 2001 and spread virally as a holiday flash game. This version is an independent fan remake built with modern web technology (HTML5 canvas, procedural audio and graphics). The gameplay keeps the 3v3 format and 10 levels of escalating difficulty from the original while using all original assets and code written from scratch.
+
+## How to play
+
+* Control three red team units against three green team AI opponents
+* Throw snowballs by clicking or tapping targets
+* Hit opponents to knock them out, clear all three to win the level
+* Survive across ten levels of increasing difficulty
+* Difficulty presets: easy, normal, hard
+
+## Controls
+
+* Desktop: mouse to aim and click to throw
+* Keyboard: space to throw, arrow keys to move between units, escape to pause
+* Mobile: tap to aim and throw, on screen joystick for movement
+
+## History and attribution
+
+* Original SnowCraft released 2001 by Nicholson NY, a holiday viral flash game
+* Original Flash runtime deprecated in 2020, original playable URLs no longer function
+* This remake is an independent fan project, no affiliation with Nicholson NY
+* All code and assets in this remake were written from scratch in 2025 and 2026
+* Project source and issue tracker are public on GitHub
+
+## Credits
+
+* Fan remake by Matthew McKenzie
+* Original game design credit: Nicholson NY (2001)
+* Audio is procedurally generated via Web Audio API, no sampled assets from the original
+
+## Licensing and fan project posture
+
+This is a non commercial fan remake. No claim is made to the SnowCraft name or original game assets. If the rights holder to the original SnowCraft objects, contact the maintainer to resolve.
+
+## Key URLs
+
+* Play: https://snowcraft.vercel.app/
+* Source: https://github.com/atthewm/snowcraft-remake
+* Sitemap: https://snowcraft.vercel.app/sitemap.xml

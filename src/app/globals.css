@@ -56,6 +56,28 @@ button:hover {
   top: -20px;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .snowflake-fall {
+    animation: none;
+    opacity: 0.3;
+    top: 50vh;
+  }
+
+  .animate-spin,
+  .animate-bounce,
+  .animate-pulse {
+    animation: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Volume slider styling */
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
