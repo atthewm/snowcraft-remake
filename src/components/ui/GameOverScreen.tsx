@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 
 interface GameOverScreenProps {
   type: 'game_over' | 'level_complete' | 'victory';
@@ -9,6 +9,49 @@ interface GameOverScreenProps {
   onNextLevel?: () => void;
   onRestart?: () => void;
   onQuit: () => void;
+}
+
+function ShareButton({ score, level, type }: { score: number; level: number; type: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const shareText = type === 'victory'
+    ? `I conquered all 10 levels of SnowCraft with a score of ${score}! Can you beat it?`
+    : `I scored ${score} on level ${level} in SnowCraft! Can you beat it?`;
+
+  const handleShare = useCallback(async () => {
+    const shareData = {
+      title: 'SnowCraft',
+      text: shareText,
+      url: typeof window !== 'undefined' ? window.location.href : 'https://snowcraft.vercel.app',
+    };
+
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch {
+        // User cancelled or share failed, fall through to clipboard
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(`${shareText}\n${shareData.url}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard not available
+    }
+  }, [shareText]);
+
+  return (
+    <button
+      onClick={handleShare}
+      className="px-8 py-3 text-lg font-bold text-white rounded-lg transition-all hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+      style={{ backgroundColor: '#3498db', boxShadow: '0 4px 0 #2980b9' }}
+    >
+      {copied ? 'COPIED!' : 'SHARE SCORE'}
+    </button>
+  );
 }
 
 export default function GameOverScreen({ type, level, score, onNextLevel, onRestart, onQuit }: GameOverScreenProps) {
@@ -28,6 +71,7 @@ export default function GameOverScreen({ type, level, score, onNextLevel, onRest
               >
                 NEXT LEVEL
               </button>
+              <ShareButton score={score} level={level} type={type} />
               <button
                 onClick={onQuit}
                 className="px-8 py-3 text-lg text-gray-600 rounded-lg transition-all hover:scale-105 active:scale-95 bg-gray-200"
@@ -51,6 +95,7 @@ export default function GameOverScreen({ type, level, score, onNextLevel, onRest
               >
                 TRY AGAIN
               </button>
+              <ShareButton score={score} level={level} type={type} />
               <button
                 onClick={onQuit}
                 className="px-8 py-3 text-lg text-gray-600 rounded-lg transition-all hover:scale-105 active:scale-95 bg-gray-200"
@@ -67,6 +112,7 @@ export default function GameOverScreen({ type, level, score, onNextLevel, onRest
             <p className="text-xl text-gray-600 mb-1">You conquered all levels!</p>
             <p className="text-3xl text-yellow-500 mb-6">Final Score: {score}</p>
             <div className="flex flex-col gap-3">
+              <ShareButton score={score} level={level} type={type} />
               <button
                 onClick={onQuit}
                 className="px-8 py-3 text-xl font-bold text-white rounded-lg transition-all hover:scale-105 active:scale-95"
