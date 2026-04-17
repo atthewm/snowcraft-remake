@@ -3,4 +3,34 @@ Allow: /
 Disallow: /_next/
 Disallow: /api/
 
+User-agent: GPTBot
+Allow: /
+Disallow: /_next/
+Disallow: /api/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /_next/
+Disallow: /api/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /_next/
+Disallow: /api/
+
+User-agent: CCBot
+Allow: /
+Disallow: /_next/
+Disallow: /api/
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /_next/
+Disallow: /api/
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /_next/
+Disallow: /api/
+
 Sitemap: https://snowcraft.vercel.app/sitemap.xml
