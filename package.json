@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests",
+    "postbuild": "node scripts/check-public-build.mjs",
+    "test:public-build": "node --test scripts/check-public-build.test.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^1.4.1",
